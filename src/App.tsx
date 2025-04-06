@@ -207,29 +207,12 @@ const COLORS = [
 ];
 
 function App() {
-  const [notes, setNotes] = useState<Note[]>([]);
-  const [showCompleted, setShowCompleted] = useState(true);
+  const [notes, setNotes] = useState<Note[]>(() => {
+    const savedNotes = Cookies.get('notes');
+    return savedNotes ? JSON.parse(savedNotes) : [];
+  });
   const [lastCreatedNoteId, setLastCreatedNoteId] = useState<string | null>(null);
   const [explodingNotes, setExplodingNotes] = useState<string[]>([]);
-
-  useEffect(() => {
-    const savedNotes = Cookies.get('notes');
-    if (savedNotes) {
-      try {
-        const parsedNotes = JSON.parse(savedNotes);
-        // Ensure all notes have the new properties
-        const updatedNotes = parsedNotes.map((note: Note) => ({
-          ...note,
-          completed: note.completed || false,
-          archived: note.archived || false
-        }));
-        setNotes(updatedNotes);
-      } catch (error) {
-        console.error('Error parsing saved notes:', error);
-        setNotes([]);
-      }
-    }
-  }, []);
 
   useEffect(() => {
     if (notes.length > 0) {
@@ -379,7 +362,7 @@ function App() {
           </NotesContainer>
         </ActiveNotesSection>
         
-        {showCompleted && notes.some(note => note.completed && !note.archived) && (
+        {notes.some(note => note.completed && !note.archived) && (
           <CompletedNotesSection>
             <h2>Completed Notes</h2>
             <ArchiveButton onClick={archiveCompletedNotes}>
