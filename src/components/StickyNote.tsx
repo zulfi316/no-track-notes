@@ -36,6 +36,11 @@ const explosionAnimation = keyframes`
   100% { transform: scale(0); opacity: 0; }
 `;
 
+const emojiFloatAnimation = keyframes`
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(-100px) rotate(20deg); opacity: 0; }
+`;
+
 const NoteContainer = styled.div<{ color: string; isOld: boolean; isCompleting: boolean; isCompleted: boolean; isArchived: boolean; isExploding: boolean }>`
   background-color: ${props => props.color};
   padding: 20px;
@@ -252,6 +257,16 @@ const RestoreButton = styled.button`
   }
 `;
 
+const EmojiParticle = styled.div<{ left: number; delay: number }>`
+  position: absolute;
+  font-size: 24px;
+  left: ${props => props.left}%;
+  bottom: 0;
+  animation: ${emojiFloatAnimation} 1s ease-out ${props => props.delay}s forwards;
+  pointer-events: none;
+  z-index: 100;
+`;
+
 const StickyNote: React.FC<StickyNoteProps> = ({ 
   note, 
   onDelete, 
@@ -268,6 +283,8 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [isOld, setIsOld] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
+  const [showEmojis, setShowEmojis] = useState(false);
+  const [emojiParticles, setEmojiParticles] = useState<Array<{ id: number; emoji: string; left: number; delay: number }>>([]);
   const noteRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -338,6 +355,32 @@ const StickyNote: React.FC<StickyNoteProps> = ({
     }, 800);
   };
 
+  const handleRestore = () => {
+    if (noteRef.current && onRestore) {
+      // Create emoji particles
+      const sadEmojis = ['😢', '😭', '😞', '😔', '😟'];
+      const particles = [];
+      
+      for (let i = 0; i < 15; i++) {
+        particles.push({
+          id: i,
+          emoji: sadEmojis[Math.floor(Math.random() * sadEmojis.length)],
+          left: Math.random() * 80 + 10, // 10% to 90% of container width
+          delay: i * 0.05 // Stagger the animation
+        });
+      }
+      
+      setEmojiParticles(particles);
+      setShowEmojis(true);
+      
+      // Call onRestore after animation completes
+      setTimeout(() => {
+        setShowEmojis(false);
+        onRestore(note.id);
+      }, 1500);
+    }
+  };
+
   const COLORS = [
     '#ffd700', // Gold
     '#98fb98', // Pale Green
@@ -361,6 +404,12 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       isExploding={isArchiving}
       ref={noteRef}
     >
+      {showEmojis && emojiParticles.map(particle => (
+        <EmojiParticle key={particle.id} left={particle.left} delay={particle.delay}>
+          {particle.emoji}
+        </EmojiParticle>
+      ))}
+      
       <ControlsContainer>
         <IconButton onClick={() => onDelete(note.id)}>×</IconButton>
       </ControlsContainer>
@@ -396,7 +445,7 @@ const StickyNote: React.FC<StickyNoteProps> = ({
           <DoneButton onClick={handleComplete}>✓</DoneButton>
         )}
         {isCompleted && onRestore && (
-          <RestoreButton onClick={() => onRestore(note.id)} title="Restore note">↺</RestoreButton>
+          <RestoreButton onClick={handleRestore} title="Restore note">↺</RestoreButton>
         )}
         <ColorPickerButton onClick={() => setShowColorPicker(!showColorPicker)}>
           🎨
