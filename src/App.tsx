@@ -366,7 +366,7 @@ function App() {
           <CompletedNotesSection>
             <h2>Completed Notes</h2>
             <ArchiveButton onClick={archiveCompletedNotes}>
-              🗑️ Archive Completed
+              🗑️ Delete All
             </ArchiveButton>
             <CompletedNotesList>
               {notes
