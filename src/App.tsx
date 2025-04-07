@@ -183,7 +183,6 @@ const ArchiveButton = styled.button`
   margin: 0 auto 15px auto;
   display: flex;
   align-items: center;
-  justify-content: center;
   width: 100%;
   gap: 8px;
   backdrop-filter: blur(3px);
@@ -272,6 +271,12 @@ function App() {
   const completeNote = (id: string) => {
     setNotes(notes.map(note => 
       note.id === id ? { ...note, completed: true } : note
+    ));
+  };
+
+  const restoreNote = (id: string) => {
+    setNotes(notes.map(note => 
+      note.id === id ? { ...note, completed: false } : note
     ));
   };
 
@@ -379,6 +384,7 @@ function App() {
                     onDelete={deleteNote}
                     onColorChange={updateNoteColor}
                     onComplete={completeNote}
+                    onRestore={restoreNote}
                     isCompleted={true}
                     isArchiving={explodingNotes.includes(note.id)}
                   />

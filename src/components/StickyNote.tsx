@@ -9,6 +9,7 @@ interface StickyNoteProps {
   onUpdate: (id: string, content: string) => void;
   onColorChange: (id: string, color: string) => void;
   onComplete: (id: string) => void;
+  onRestore?: (id: string) => void;
   isCompleted?: boolean;
   autoFocus?: boolean;
   isArchiving?: boolean;
@@ -229,12 +230,35 @@ const ColorOption = styled.button<{ color: string }>`
   }
 `;
 
+const RestoreButton = styled.button`
+  background-color: rgba(76, 175, 80, 0.1);
+  color: #4CAF50;
+  border: 1px solid rgba(76, 175, 80, 0.3);
+  border-radius: 12px;
+  padding: 4px 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  opacity: 0.7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  &:hover {
+    background-color: rgba(76, 175, 80, 0.2);
+    opacity: 1;
+    transform: scale(1.05);
+  }
+`;
+
 const StickyNote: React.FC<StickyNoteProps> = ({ 
   note, 
   onDelete, 
   onUpdate, 
   onColorChange,
   onComplete,
+  onRestore,
   isCompleted = false,
   autoFocus = false,
   isArchiving = false
@@ -370,6 +394,9 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       <BottomControlsContainer>
         {!isCompleted && (
           <DoneButton onClick={handleComplete}>✓</DoneButton>
+        )}
+        {isCompleted && onRestore && (
+          <RestoreButton onClick={() => onRestore(note.id)} title="Restore note">↺</RestoreButton>
         )}
         <ColorPickerButton onClick={() => setShowColorPicker(!showColorPicker)}>
           🎨
