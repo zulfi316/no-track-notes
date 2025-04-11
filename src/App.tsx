@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import Cookies from 'js-cookie';
 import StickyNote from './components/StickyNote';
 import { Note } from './types';
 import confetti from 'canvas-confetti';
@@ -21,6 +20,40 @@ const AppContainer = styled.div`
   
   @media (max-width: 768px) {
     padding: 15px 10px;
+  }
+`;
+
+const StickyHeader = styled.div`
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: linear-gradient(to bottom, rgba(230, 247, 255, 0.95), rgba(209, 233, 255, 0.95));
+  backdrop-filter: blur(8px);
+  padding: 20px;
+  margin: -20px -20px 20px -20px;
+  border-bottom: 1px solid rgba(30, 144, 255, 0.1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+      radial-gradient(circle at 25px 25px, rgba(255, 105, 180, 0.2) 3%, transparent 0%),
+      radial-gradient(circle at 75px 75px, rgba(30, 144, 255, 0.2) 3%, transparent 0%),
+      radial-gradient(circle at 125px 125px, rgba(147, 112, 219, 0.2) 3%, transparent 0%),
+      radial-gradient(circle at 175px 175px, rgba(64, 224, 208, 0.2) 3%, transparent 0%);
+    background-size: 100px 100px, 100px 100px, 100px 100px, 100px 100px;
+    opacity: 0.5;
+    z-index: -1;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 15px 10px;
+    margin: -15px -10px 15px -10px;
   }
 `;
 
@@ -207,7 +240,7 @@ const COLORS = [
 
 function App() {
   const [notes, setNotes] = useState<Note[]>(() => {
-    const savedNotes = Cookies.get('notes');
+    const savedNotes = localStorage.getItem('notes');
     return savedNotes ? JSON.parse(savedNotes) : [];
   });
   const [lastCreatedNoteId, setLastCreatedNoteId] = useState<string | null>(null);
@@ -215,7 +248,9 @@ function App() {
 
   useEffect(() => {
     if (notes.length > 0) {
-      Cookies.set('notes', JSON.stringify(notes), { expires: 365 });
+      localStorage.setItem('notes', JSON.stringify(notes));
+    } else {
+      localStorage.removeItem('notes');
     }
   }, [notes]);
 
@@ -244,14 +279,6 @@ function App() {
     
     // Update state
     setNotes(updatedNotes);
-    
-    // Update cookies with the filtered notes
-    if (updatedNotes.length > 0) {
-      Cookies.set('notes', JSON.stringify(updatedNotes), { expires: 365 });
-    } else {
-      // If no notes left, remove the cookie entirely
-      Cookies.remove('notes');
-    }
   };
 
   const updateNote = (id: string, content: string) => {
@@ -269,109 +296,102 @@ function App() {
   };
 
   const completeNote = (id: string) => {
-    setNotes(notes.map(note => 
-      note.id === id ? { ...note, completed: true } : note
-    ));
+    setNotes(prevNotes => 
+      prevNotes.map(note => 
+        note.id === id ? { ...note, completed: true } : note
+      )
+    );
   };
 
   const restoreNote = (id: string) => {
-    setNotes(notes.map(note => 
-      note.id === id ? { ...note, completed: false } : note
-    ));
+    setNotes(prevNotes => 
+      prevNotes.map(note => 
+        note.id === id ? { ...note, completed: false } : note
+      )
+    );
   };
 
   const archiveCompletedNotes = () => {
-    // First, mark notes as exploding
+    // Set exploding notes first
     const completedNoteIds = notes
       .filter(note => note.completed && !note.archived)
       .map(note => note.id);
     
     setExplodingNotes(completedNoteIds);
     
-    // Then, after animation completes, remove them completely instead of marking as archived
+    // Wait for animation to complete before archiving
     setTimeout(() => {
-      // Filter out completed notes that aren't already archived
-      const updatedNotes = notes.filter(note => !(note.completed && !note.archived));
-      
-      // Update state
-      setNotes(updatedNotes);
-      
-      // Update cookies with the filtered notes
-      if (updatedNotes.length > 0) {
-        Cookies.set('notes', JSON.stringify(updatedNotes), { expires: 365 });
-      } else {
-        // If no notes left, remove the cookie entirely
-        Cookies.remove('notes');
-      }
-      
+      setNotes(prevNotes => 
+        prevNotes.map(note => 
+          note.completed && !note.archived ? { ...note, archived: true } : note
+        )
+      );
       setExplodingNotes([]);
-    }, 500); // Match the animation duration
+    }, 500);
   };
 
   const finishAllNotes = () => {
-    // Create a copy of the notes array to avoid state update issues
-    const notesToComplete = notes.filter(note => !note.completed);
+    // Get all active note IDs
+    const activeNoteIds = notes
+      .filter(note => !note.completed && !note.archived)
+      .map(note => note.id);
     
-    // Mark all notes as completed
-    setNotes(notes.map(note => 
-      !note.completed ? { ...note, completed: true } : note
-    ));
+    // Set exploding notes first
+    setExplodingNotes(activeNoteIds);
     
-    // Trigger confetti for each note
-    notesToComplete.forEach((note, index) => {
-      setTimeout(() => {
-        // Simulate the confetti effect for each note
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { 
-            x: 0.5 + (Math.random() - 0.5) * 0.3, 
-            y: 0.5 + (Math.random() - 0.5) * 0.3 
-          },
-          colors: ['#ffd700', '#ff9d00', '#ff4500', '#ff6347', '#ff7f50']
-        });
-      }, index * 200); // Stagger the confetti effects
-    });
+    // Wait for animation to complete before completing all notes
+    setTimeout(() => {
+      setNotes(prevNotes => 
+        prevNotes.map(note => 
+          !note.completed && !note.archived ? { ...note, completed: true } : note
+        )
+      );
+      setExplodingNotes([]);
+    }, 500);
   };
 
   return (
     <AppContainer>
-      <Header>
-        <Title>
-          <TitleIcon>📝</TitleIcon>
-          <TitleText>Today's List</TitleText>
-        </Title>
-        <ButtonContainer>
-          <AddButton onClick={addNote}>➕ Add Note</AddButton>
-          <FinishAllButton onClick={finishAllNotes}>✅ All done for the day!!!</FinishAllButton>
-        </ButtonContainer>
-      </Header>
-      
+      <StickyHeader>
+        <Header>
+          <Title>
+            <TitleIcon>📝</TitleIcon>
+            <TitleText>No Track Notes</TitleText>
+          </Title>
+          <ButtonContainer>
+            <AddButton onClick={addNote}>
+              <span>➕</span> Add Note
+            </AddButton>
+            <FinishAllButton onClick={finishAllNotes}>
+              <span>✨</span> All Done for the Day
+            </FinishAllButton>
+          </ButtonContainer>
+        </Header>
+      </StickyHeader>
       <MainContent>
         <ActiveNotesSection>
           <NotesContainer>
             {notes
-              .filter(note => !note.completed)
+              .filter(note => !note.completed && !note.archived)
               .map(note => (
                 <StickyNote
                   key={note.id}
                   note={note}
-                  onUpdate={updateNote}
                   onDelete={deleteNote}
+                  onUpdate={updateNote}
                   onColorChange={updateNoteColor}
                   onComplete={completeNote}
+                  isNew={note.id === lastCreatedNoteId}
+                  isExploding={explodingNotes.includes(note.id)}
                   autoFocus={note.id === lastCreatedNoteId}
-                  isArchiving={explodingNotes.includes(note.id)}
                 />
               ))}
           </NotesContainer>
         </ActiveNotesSection>
-        
         {notes.some(note => note.completed && !note.archived) && (
           <CompletedNotesSection>
-            <h2>Completed Notes</h2>
             <ArchiveButton onClick={archiveCompletedNotes}>
-              🗑️ Delete All
+              <span>🗑️</span> Archive Completed Notes
             </ArchiveButton>
             <CompletedNotesList>
               {notes
@@ -380,13 +400,12 @@ function App() {
                   <StickyNote
                     key={note.id}
                     note={note}
-                    onUpdate={updateNote}
                     onDelete={deleteNote}
+                    onUpdate={updateNote}
                     onColorChange={updateNoteColor}
-                    onComplete={completeNote}
                     onRestore={restoreNote}
                     isCompleted={true}
-                    isArchiving={explodingNotes.includes(note.id)}
+                    isExploding={explodingNotes.includes(note.id)}
                   />
                 ))}
             </CompletedNotesList>

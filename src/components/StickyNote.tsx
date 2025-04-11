@@ -8,11 +8,13 @@ interface StickyNoteProps {
   onDelete: (id: string) => void;
   onUpdate: (id: string, content: string) => void;
   onColorChange: (id: string, color: string) => void;
-  onComplete: (id: string) => void;
+  onComplete?: (id: string) => void;
   onRestore?: (id: string) => void;
   isCompleted?: boolean;
   autoFocus?: boolean;
   isArchiving?: boolean;
+  isNew?: boolean;
+  isExploding?: boolean;
 }
 
 const flashAnimation = keyframes`
@@ -41,24 +43,31 @@ const emojiFloatAnimation = keyframes`
   100% { transform: translateY(-100px) rotate(20deg); opacity: 0; }
 `;
 
-const NoteContainer = styled.div<{ color: string; isOld: boolean; isCompleting: boolean; isCompleted: boolean; isArchived: boolean; isExploding: boolean }>`
+const NoteContainer = styled.div<{ color: string; isNew: boolean; isExploding: boolean; isCompleted: boolean; isCompleting: boolean }>`
   background-color: ${props => props.color};
   padding: 20px;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   margin: 10px;
   width: ${props => props.isCompleted ? '100%' : '250px'};
-  min-height: ${props => props.isCompleted ? 'auto' : '250px'};
+  min-height: 200px;
   position: relative;
-  display: flex;
-  flex-direction: column;
-  transition: background-color 0.3s ease;
+  transition: all 0.3s ease;
   animation: ${props => {
     if (props.isExploding) return explosionAnimation;
-    if (props.isArchived) return 'none';
     if (props.isCompleting) return flourishAnimation;
-    return props.isOld ? flashAnimation : 'none';
-  }} ${props => props.isExploding ? '0.5s' : props.isCompleting ? '0.8s' : '2s'} ${props => (props.isExploding || props.isCompleting) ? 'forwards' : 'infinite'};
+    if (props.isNew) return flashAnimation;
+    return 'none';
+  }} ${props => {
+    if (props.isExploding) return '0.5s ease-in-out forwards';
+    if (props.isCompleting) return '0.8s ease-in-out forwards';
+    return '1s ease-in-out';
+  }};
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  }
 `;
 
 const NoteContent = styled.textarea<{ isCompleted: boolean }>`
@@ -276,7 +285,9 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   onRestore,
   isCompleted = false,
   autoFocus = false,
-  isArchiving = false
+  isArchiving = false,
+  isNew = false,
+  isExploding = false
 }) => {
   const [timeElapsed, setTimeElapsed] = useState<string>('');
   const [content, setContent] = useState(note.content);
@@ -315,10 +326,10 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   }, [note.createdAt]);
 
   useEffect(() => {
-    if (autoFocus && textareaRef.current && !isCompleted) {
+    if ((isNew || autoFocus) && textareaRef.current && !isCompleted) {
       textareaRef.current.focus();
     }
-  }, [autoFocus, isCompleted]);
+  }, [isNew, autoFocus, isCompleted]);
 
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newContent = e.target.value;
@@ -348,9 +359,9 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       });
     }
     
-    // Mark as completed after animation
+    // Call the onComplete callback after a short delay
     setTimeout(() => {
-      onComplete(note.id);
+      onComplete && onComplete(note.id);
       setIsCompleting(false);
     }, 800);
   };
@@ -396,12 +407,11 @@ const StickyNote: React.FC<StickyNoteProps> = ({
 
   return (
     <NoteContainer 
-      color={note.color} 
-      isOld={isOld} 
-      isCompleting={isCompleting}
+      color={note.color}
+      isNew={isNew}
+      isExploding={isExploding}
       isCompleted={isCompleted}
-      isArchived={note.archived}
-      isExploding={isArchiving}
+      isCompleting={isCompleting}
       ref={noteRef}
     >
       {showEmojis && emojiParticles.map(particle => (
