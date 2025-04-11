@@ -49,8 +49,8 @@ const NoteContainer = styled.div<{ color: string; isNew: boolean; isExploding: b
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   margin: 10px;
-  width: ${props => props.isCompleted ? '100%' : '250px'};
-  min-height: 200px;
+  width: ${props => props.isCompleted ? '100%' : '300px'};
+  min-height: 150px;
   position: relative;
   transition: all 0.3s ease;
   animation: ${props => {
@@ -68,6 +68,13 @@ const NoteContainer = styled.div<{ color: string; isNew: boolean; isExploding: b
     transform: translateY(-2px);
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
   }
+  
+  @media (max-width: 768px) {
+    padding: 15px;
+    margin: 5px;
+    width: ${props => props.isCompleted ? '100%' : '300px'};
+    min-height: 120px;
+  }
 `;
 
 const NoteContent = styled.textarea<{ isCompleted: boolean }>`
@@ -81,9 +88,11 @@ const NoteContent = styled.textarea<{ isCompleted: boolean }>`
   color: ${props => props.isCompleted ? '#999' : '#333'};
   padding: 12px;
   text-decoration: ${props => props.isCompleted ? 'line-through' : 'none'};
-  min-height: ${props => props.isCompleted ? '60px' : 'auto'};
-  max-height: ${props => props.isCompleted ? '120px' : 'none'};
-  overflow-y: ${props => props.isCompleted ? 'auto' : 'hidden'};
+  min-height: ${props => props.isCompleted ? '40px' : '80px'};
+  height: auto;
+  overflow-y: auto;
+  width: 100%;
+  box-sizing: border-box;
   &:focus {
     outline: none;
   }
@@ -91,6 +100,11 @@ const NoteContent = styled.textarea<{ isCompleted: boolean }>`
     color: #999;
     font-style: italic;
     font-size: 18px;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 8px;
+    min-height: ${props => props.isCompleted ? '30px' : '60px'};
   }
 `;
 
@@ -100,6 +114,11 @@ const Timer = styled.div`
   position: absolute;
   right: 10px;
   bottom: 10px;
+  
+  @media (max-width: 768px) {
+    right: 5px;
+    bottom: 5px;
+  }
 `;
 
 const ControlsContainer = styled.div`
@@ -108,6 +127,11 @@ const ControlsContainer = styled.div`
   right: 10px;
   display: flex;
   gap: 5px;
+  
+  @media (max-width: 768px) {
+    top: 5px;
+    right: 5px;
+  }
 `;
 
 const IconButton = styled.button`
@@ -126,6 +150,12 @@ const IconButton = styled.button`
   &:hover {
     background-color: rgba(0, 0, 0, 0.1);
   }
+  
+  @media (max-width: 768px) {
+    font-size: 14px;
+    width: 20px;
+    height: 20px;
+  }
 `;
 
 const BottomControlsContainer = styled.div`
@@ -135,6 +165,12 @@ const BottomControlsContainer = styled.div`
   display: flex;
   gap: 8px;
   align-items: center;
+  
+  @media (max-width: 768px) {
+    bottom: 5px;
+    left: 5px;
+    gap: 5px;
+  }
 `;
 
 const DoneButton = styled.button`
@@ -157,6 +193,11 @@ const DoneButton = styled.button`
     opacity: 1;
     transform: scale(1.05);
   }
+  
+  @media (max-width: 768px) {
+    width: 24px;
+    height: 24px;
+  }
 `;
 
 const ColorPickerButton = styled.button`
@@ -178,6 +219,11 @@ const ColorPickerButton = styled.button`
     background-color: rgba(0, 0, 0, 0.1);
     opacity: 1;
     transform: scale(1.05);
+  }
+  
+  @media (max-width: 768px) {
+    width: 24px;
+    height: 24px;
   }
 `;
 
@@ -292,7 +338,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
   const [timeElapsed, setTimeElapsed] = useState<string>('');
   const [content, setContent] = useState(note.content);
   const [showColorPicker, setShowColorPicker] = useState(false);
-  const [isOld, setIsOld] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
   const [showEmojis, setShowEmojis] = useState(false);
   const [emojiParticles, setEmojiParticles] = useState<Array<{ id: number; emoji: string; left: number; delay: number }>>([]);
@@ -306,9 +351,6 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       const minutes = Math.floor(diff / 60000);
       const hours = Math.floor(minutes / 60);
       const days = Math.floor(hours / 24);
-
-      // Check if note is older than an hour
-      setIsOld(hours > 0);
 
       if (days > 0) {
         setTimeElapsed(`${days}d ${hours % 24}h ago`);
@@ -330,6 +372,22 @@ const StickyNote: React.FC<StickyNoteProps> = ({
       textareaRef.current.focus();
     }
   }, [isNew, autoFocus, isCompleted]);
+
+  // Add auto-resize effect
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      const adjustHeight = () => {
+        textarea.style.height = 'auto';
+        textarea.style.height = `${textarea.scrollHeight}px`;
+      };
+      
+      textarea.addEventListener('input', adjustHeight);
+      adjustHeight(); // Initial adjustment
+      
+      return () => textarea.removeEventListener('input', adjustHeight);
+    }
+  }, []);
 
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newContent = e.target.value;

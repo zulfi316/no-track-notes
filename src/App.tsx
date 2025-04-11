@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import StickyNote from './components/StickyNote';
 import { Note } from './types';
-import confetti from 'canvas-confetti';
+import './App.css';
 
 const AppContainer = styled.div`
   min-height: 100vh;
@@ -19,7 +19,7 @@ const AppContainer = styled.div`
   flex-direction: column;
   
   @media (max-width: 768px) {
-    padding: 15px 10px;
+    padding: 5px 5px;
   }
 `;
 
@@ -52,8 +52,8 @@ const StickyHeader = styled.div`
   }
   
   @media (max-width: 768px) {
-    padding: 15px 10px;
-    margin: -15px -10px 15px -10px;
+    padding: 2px;
+    margin: -5px -5px 5px -5px;
   }
 `;
 
@@ -63,6 +63,10 @@ const Header = styled.header`
   display: flex;
   flex-direction: column;
   align-items: center;
+  
+  @media (max-width: 768px) {
+    margin-bottom: 2px;
+  }
 `;
 
 const Title = styled.h1`
@@ -75,8 +79,9 @@ const Title = styled.h1`
   letter-spacing: 1px;
   
   @media (max-width: 768px) {
-    font-size: 2rem;
-    margin-bottom: 15px;
+    font-size: 1.8rem;
+    margin-bottom: 2px;
+    gap: 10px;
   }
 `;
 
@@ -93,7 +98,22 @@ const TitleIcon = styled.span`
   filter: drop-shadow(2px 2px 2px rgba(0, 0, 0, 0.2));
   
   @media (max-width: 768px) {
-    font-size: 2rem;
+    font-size: 1.8rem;
+  }
+`;
+
+const ButtonContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    width: 100%;
+    max-width: 250px;
+    margin-bottom: 5px;
+    gap: 5px;
   }
 `;
 
@@ -113,13 +133,15 @@ const AddButton = styled.button`
   }
   
   @media (max-width: 768px) {
+    padding: 6px 12px;
+    font-size: 0.9rem;
     width: 100%;
     justify-content: center;
   }
 `;
 
 const FinishAllButton = styled.button`
-  background-color: #9c27b0; /* Changed to purple */
+  background-color: #9c27b0;
   color: white;
   border: none;
   padding: 10px 20px;
@@ -130,24 +152,14 @@ const FinishAllButton = styled.button`
   align-items: center;
   gap: 8px;
   &:hover {
-    background-color: #7b1fa2; /* Darker purple on hover */
+    background-color: #7b1fa2;
   }
   
   @media (max-width: 768px) {
+    padding: 6px 12px;
+    font-size: 0.9rem;
     width: 100%;
     justify-content: center;
-  }
-`;
-
-const ButtonContainer = styled.div`
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  
-  @media (max-width: 768px) {
-    flex-direction: column;
-    width: 100%;
-    max-width: 300px;
   }
 `;
 
@@ -158,7 +170,7 @@ const NotesContainer = styled.div`
   gap: 20px;
   
   @media (max-width: 768px) {
-    gap: 15px;
+    gap: 5px;
   }
 `;
 
